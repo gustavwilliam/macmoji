@@ -5,10 +5,10 @@ from typing_extensions import Annotated
 from pathlib import Path
 import importlib.metadata
 
-import macmoji.tui.create
+import macmoji.cli.create
 
 app = typer.Typer()
-app.add_typer(macmoji.tui.create.app, name="create")
+app.add_typer(macmoji.cli.create.app, name="create")
 
 
 def _version_callback(value: bool) -> None:
