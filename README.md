@@ -1,3 +1,3 @@
 # MacMoji
 
-Custom Emoji on Mac for all!
+Create custom emoji fonts for macOS.

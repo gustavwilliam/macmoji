@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "macmoji"
 version = "0.1.0"
-description = ""
+description = "Create custom emoji fonts for macOS."
 authors = ["Gustav Odinger <65498475+gustavwilliam@users.noreply.github.com>"]
 readme = "README.md"
 
@@ -10,7 +10,7 @@ python = "^3.10"
 typer = {extras = ["all"], version = "^0.9.0"}
 
 [tool.poetry.scripts]
-macmoji = "macmoji.main:app"
+macmoji = "macmoji.__main__:app"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
