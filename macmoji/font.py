@@ -33,7 +33,6 @@ def generate_base_emoji_ttx(file_name: str):
         BASE_EMOJI_FONT_PATH / TMP_NAME,
         BASE_EMOJI_FONT_PATH / f"{file_name}.ttx",
     )
-    os.remove(BASE_EMOJI_FONT_PATH / f"{file_name}.ttf")
 
 
 def base_emoji_process_cleanup() -> int:
@@ -42,6 +41,8 @@ def base_emoji_process_cleanup() -> int:
     for path in [
         BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf",
         BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf",
+        BASE_EMOJI_FONT_PATH / "AppleColorEmoji-tmp.ttx",
+        BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-tmp.ttx",
         Path("macmoji/AppleColorEmoji.ttf"),
         Path("macmoji/.AppleColorEmojiUI.ttf"),
     ]:

@@ -1,3 +1,4 @@
+from functools import partial
 import typer
 from rich import print
 from typing import Optional
@@ -5,21 +6,18 @@ from typing_extensions import Annotated
 from pathlib import Path
 import importlib.metadata
 import humanize
-from rich.progress import (
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-    TimeElapsedColumn,
-)
-from rich.panel import Panel
+from rich.progress import Progress, TaskID
+from threading import Thread
+import time
 
 import macmoji.cli.create
-from macmoji.config import BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH
+from macmoji.config import BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH, TTX_SIZE
 from macmoji.font import (
     generate_base_emoji_ttf,
     generate_base_emoji_ttx,
     base_emoji_process_cleanup,
 )
+from macmoji.utils import ProgressTask
 
 app = typer.Typer()
 app.add_typer(macmoji.cli.create.app, name="create")
@@ -59,8 +57,6 @@ def generate_base_files(
     """
     if not force:  # Exit if there are already generated files
         required_files = [
-            BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf",
-            BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttx",
             BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf",
             BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttx",
         ]
@@ -69,35 +65,34 @@ def generate_base_files(
             return
 
     print("Generating emoji base files. This will most likely take a few minutes...\n")
-    with Progress(
-        SpinnerColumn(
-            spinner_name="aesthetic", finished_text="[progress.spinner]Done![/]"
-        ),
-        TextColumn("[progress.description]{task.description}"),
-        TimeElapsedColumn(),
-    ) as progress:
-        Panel.fit(progress)
-        task_ttf = progress.add_task("Generating base emoji TTF files", total=1)
+
+    with Progress() as progress:
+        task_ttf = progress.add_task("Generating TTF files", total=1)
+        ttx_1 = ProgressTask(
+            description="Decompiling AppleColorEmoji.ttf",
+            progress=progress,
+            target=partial(generate_base_emoji_ttx, "AppleColorEmoji"),
+            output_file=BASE_EMOJI_FONT_PATH / "AppleColorEmoji-tmp.ttx",
+            output_size=TTX_SIZE,
+        )
+        ttx_2 = ProgressTask(
+            description="Decompiling .AppleColorEmojiUI.ttf",
+            progress=progress,
+            target=partial(generate_base_emoji_ttx, ".AppleColorEmojiUI"),
+            output_file=BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-tmp.ttx",
+            output_size=TTX_SIZE,
+        )
+
         generate_base_emoji_ttf()
         progress.update(task_ttf, completed=1)
 
-        task_ttx_1 = progress.add_task(
-            "Decompiling AppleColorEmoji.ttf into TTX", total=1
-        )
-        generate_base_emoji_ttx("AppleColorEmoji")
-        progress.update(task_ttx_1, completed=1)
+        ttx_1.start()
+        ttx_2.start()
+        ttx_1.join()
+        ttx_2.join()
 
-        task_ttx_2 = progress.add_task(
-            "Decompiling .AppleColorEmojiUI.ttf into TTX", total=1
-        )
-        generate_base_emoji_ttx(".AppleColorEmojiUI")
-        progress.update(task_ttx_2, completed=1)
-
-        cleanup = progress.add_task("Cleaning up", total=1)
-        base_emoji_process_cleanup()
-        progress.update(cleanup, completed=1)
-
-    print("\nSuccessfully generated emoji base files!")
+    base_emoji_process_cleanup()
+    print("\nSuccessfully generated emoji base files and cleaned up!")
 
 
 @app.command()

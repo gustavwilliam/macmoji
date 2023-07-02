@@ -17,6 +17,8 @@ class AfdkoOptions:
     report: bool
 
 
+TTX_SIZE = 570000000  # Approximate size of the output TTX files
+
 ASSET_SIZES = [20, 26, 32, 40, 48, 52, 64, 96, 160]  # Sizes of the Asset pngs
 ASSET_FILE_NAME = "{unicode} {size}.png"
 
