@@ -3,6 +3,8 @@ from pathlib import Path
 from rich import print, logging
 from typing import Optional
 from typing_extensions import Annotated
+
+from macmoji.config import DEFAULT_ASSETS_PATH, DEFAULT_GENERATED_FONT_PATH
 from macmoji.converter import generate_assets
 
 
@@ -21,7 +23,7 @@ def assets(
         Path, typer.Argument(help="Path to directory of SVG or PNG source files.")
     ],
     output_dir: Path = typer.Argument(
-        Path.cwd() / "macmoji-assets",
+        DEFAULT_ASSETS_PATH,
         help="Path to the output directory of sized PNG assets.",
     ),
     verbose: bool = typer.Option(
@@ -36,7 +38,7 @@ def assets(
 ):
     """Generate folder with correctly sized PNG-files, from SVG/PNG source files."""
     output_dir_empty = not any(output_dir.iterdir())
-    if not output_dir_empty and not force:
+    if not output_dir_empty and not output_dir == DEFAULT_ASSETS_PATH and not force:
         typer.confirm(
             f"{output_dir} is not empty. Proceeding will overwrite existing files.",
             default=False,
@@ -44,18 +46,30 @@ def assets(
         )
     ignored_paths = generate_assets(input_dir, output_dir)
 
-    print(f"Done! Saved assets to: {output_dir} ({len(ignored_paths)} ignored paths)")
     print(
-        f"[bold yellow]\nWarning:[/bold yellow] saved to non-empty directory. Previously existent files may interfere with the assets when generating the font."
+        f"Done! ({len(ignored_paths)} ignored paths)\n\nSaved assets to: {output_dir} "
     )
     if verbose:
         if ignored_paths:
-            print(f"\nThe following paths were ignored: {ignored_paths}")
+            print(f"The following paths were ignored: {ignored_paths}")
         else:
-            print(f"\nNo files were ignored")
+            print(f"No files were ignored")
+    if not output_dir_empty and not output_dir == DEFAULT_ASSETS_PATH:
+        print(
+            f"[bold yellow]\nWarning:[/bold yellow] saved to non-empty directory. Previously existent files may interfere with the assets when generating the font."
+        )
 
 
 @app.command()
-def font():
-    """Generate emoji font from PNG assets folder."""
+def font(
+    input_dir: Optional[Path] = typer.Argument(
+        default=DEFAULT_ASSETS_PATH,
+        help="Path to directory with generated asset files.",
+    ),
+    output_dir: Optional[Path] = typer.Argument(
+        DEFAULT_GENERATED_FONT_PATH,
+        help="Path to the output directory of sized PNG assets.",
+    ),
+):
+    """Generate emoji font from a PNG assets folder."""
     raise NotImplementedError()
