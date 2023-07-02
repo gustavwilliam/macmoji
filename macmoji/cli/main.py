@@ -56,7 +56,7 @@ def generate_base_files(
     """
     if not force:  # Exit if there are already generated files
         required_files = [
-            BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf",
+            BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttx",
             BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttx",
         ]
         if all(map(Path.exists, required_files)):
