@@ -36,6 +36,15 @@ def generate_base_emoji_ttx(file_name: str):
     )
 
 
+def generate_ttf_from_ttx(file_name: str):
+    """Generates a TTF file from a TTX file."""
+    ttx.ttCompile(
+        BASE_EMOJI_FONT_PATH / f"{file_name}.ttx",
+        BASE_EMOJI_FONT_PATH / f"{file_name}.ttf",  # type: ignore
+        ttx.Options([], 0),
+    )
+
+
 def base_emoji_process_cleanup() -> int:
     """Removes temporary files generated during base emoji generation and returns memory cleared."""
     memory_cleared = 0
