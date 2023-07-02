@@ -1,6 +1,5 @@
 from functools import partial
 from pathlib import Path
-from turtle import st
 
 import typer
 from rich import print
@@ -21,7 +20,7 @@ from macmoji.font import (
     generate_base_emoji_ttx,
     generate_ttf_from_ttx,
 )
-from macmoji.utils import ProgressTask
+from macmoji.utils import ProgressFileTask
 
 app = typer.Typer()
 
@@ -98,21 +97,21 @@ def base_files(
     print("Generating emoji base files. This will most likely take a few minutes...\n")
 
     with Progress() as progress:
-        task_ttf = ProgressTask(
+        task_ttf = ProgressFileTask(
             description="Generating TTF files",
             progress=progress,
             target=partial(generate_base_emoji_ttf),
             output_file=BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf",
             output_size=TTF_SIZE,
         )  # Dooesn't update incrementally, but still gives a slightly nicer progress bar than the alternative
-        task_ttx_1 = ProgressTask(
+        task_ttx_1 = ProgressFileTask(
             description="Decompiling AppleColorEmoji.ttf",
             progress=progress,
             target=partial(generate_base_emoji_ttx, "AppleColorEmoji"),
             output_file=BASE_EMOJI_FONT_PATH / "AppleColorEmoji-tmp.ttx",
             output_size=TTX_SIZE,
         )
-        task_ttx_2 = ProgressTask(
+        task_ttx_2 = ProgressFileTask(
             description="Decompiling .AppleColorEmojiUI.ttf",
             progress=progress,
             target=partial(generate_base_emoji_ttx, ".AppleColorEmojiUI"),
