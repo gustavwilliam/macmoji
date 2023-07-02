@@ -1,21 +1,20 @@
+import importlib.metadata
 from functools import partial
+from pathlib import Path
+from typing import Optional
+
+import humanize
 import typer
 from rich import print
-from typing import Optional
+from rich.progress import Progress
 from typing_extensions import Annotated
-from pathlib import Path
-import importlib.metadata
-import humanize
-from rich.progress import Progress, TaskID
-from threading import Thread
-import time
 
 import macmoji.cli.create
 from macmoji.config import BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH, TTX_SIZE
 from macmoji.font import (
+    base_emoji_process_cleanup,
     generate_base_emoji_ttf,
     generate_base_emoji_ttx,
-    base_emoji_process_cleanup,
 )
 from macmoji.utils import ProgressTask
 

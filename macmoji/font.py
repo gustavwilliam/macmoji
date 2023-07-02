@@ -1,9 +1,10 @@
+import os
+from pathlib import Path
+
 from afdko import otc2otf
 from fontTools import ttx
-from pathlib import Path
-import os
 
-from macmoji.config import AfdkoOptions, BASE_EMOJI_FONT_PATH
+from macmoji.config import BASE_EMOJI_FONT_PATH, AfdkoOptions
 
 
 def generate_base_emoji_ttf():

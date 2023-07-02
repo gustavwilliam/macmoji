@@ -1,11 +1,12 @@
 from pathlib import Path
+from typing import List
+
+import cairosvg
+from PIL import Image
+from rich import print
+
 from macmoji.config import ASSET_SIZES, FileType
 from macmoji.utils import asset_file_name
-from typing import List
-import cairosvg
-from rich import print
-from PIL import Image
-
 
 ALLOWED_INPUT_TYPES = [FileType.SVG, FileType.PNG]
 

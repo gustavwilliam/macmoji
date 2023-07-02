@@ -1,12 +1,12 @@
-import typer
 from pathlib import Path
-from rich import print, logging
 from typing import Optional
+
+import typer
+from rich import print
 from typing_extensions import Annotated
 
 from macmoji.config import DEFAULT_ASSETS_PATH, DEFAULT_GENERATED_FONT_PATH
 from macmoji.converter import generate_assets
-
 
 app = typer.Typer()
 

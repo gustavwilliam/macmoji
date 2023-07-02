@@ -1,9 +1,9 @@
 from .cli.main import app
 from .config import (
-    DEFAULT_SAVE_PATH,
-    DEFAULT_GENERATED_FONT_PATH,
-    DEFAULT_ASSETS_PATH,
     BASE_EMOJI_FONT_PATH,
+    DEFAULT_ASSETS_PATH,
+    DEFAULT_GENERATED_FONT_PATH,
+    DEFAULT_SAVE_PATH,
 )
 
 # Create default file saving directories if they doesn't already exist

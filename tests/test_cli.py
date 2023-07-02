@@ -1,5 +1,6 @@
-import pytest
 import importlib.metadata
+
+import pytest
 from typer.testing import CliRunner
 
 from macmoji.__main__ import app

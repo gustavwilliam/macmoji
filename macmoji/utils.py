@@ -1,9 +1,11 @@
+import time
 from contextlib import suppress
 from functools import partial
 from pathlib import Path
 from threading import Thread
-import time
+
 from rich.progress import Progress
+
 from macmoji.config import ASSET_FILE_NAME
 
 
