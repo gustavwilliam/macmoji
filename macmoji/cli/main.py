@@ -173,6 +173,25 @@ def install(
 
 
 @app.command()
-def uninstall() -> None:
+def uninstall(
+    font_path: Path = typer.Argument(
+        Path("~/Library/Fonts/Apple Color Emoji.ttc").expanduser(),
+        help="`.ttc` font file to install",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Uninstall active custom emoji font without asking for confirmation.",
+    ),
+) -> None:
     """Uninstall active custom emoji font from the current user's font directory."""
-    raise NotImplementedError()
+    if not font_path.exists():
+        print(f"No custom emoji font installed, skipping.")
+    if not force and not typer.confirm(
+        f"Are you sure you want to uninstall the custom emoji font at '{font_path}'? This cannot be undone."
+    ):
+        raise typer.Abort()
+
+    font_path.unlink()
+    print(f"Successfully uninstalled custom emoji font.")
