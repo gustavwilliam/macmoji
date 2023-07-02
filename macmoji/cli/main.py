@@ -4,15 +4,17 @@ from typing import Optional
 from typing_extensions import Annotated
 from pathlib import Path
 import importlib.metadata
+import humanize
 from rich.progress import (
     Progress,
     SpinnerColumn,
     TextColumn,
     TimeElapsedColumn,
 )
+from rich.panel import Panel
 
 import macmoji.cli.create
-from macmoji.config import BASE_EMOJI_FONT_PATH
+from macmoji.config import BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH
 from macmoji.font import (
     generate_base_emoji_ttf,
     generate_base_emoji_ttx,
@@ -74,6 +76,7 @@ def generate_base_files(
         TextColumn("[progress.description]{task.description}"),
         TimeElapsedColumn(),
     ) as progress:
+        Panel.fit(progress)
         task_ttf = progress.add_task("Generating base emoji TTF files", total=1)
         generate_base_emoji_ttf()
         progress.update(task_ttf, completed=1)
@@ -95,6 +98,31 @@ def generate_base_files(
         progress.update(cleanup, completed=1)
 
     print("\nSuccessfully generated emoji base files!")
+
+
+@app.command()
+def clear_cache(
+    include_base_files: bool = typer.Option(
+        False,
+        "--include-base-files",
+        help="Also clear the emoji base files. Frees more than 1GB of memory, but adds multiple minutes to the next time an emoji font is generated. This cannot be undone.",
+    ),
+) -> None:
+    """Clears the cache of generated emoji assets."""
+    memory_cleared = base_emoji_process_cleanup()
+
+    for file in DEFAULT_ASSETS_PATH.iterdir():
+        memory_cleared += file.stat().st_size
+        file.unlink()
+    if include_base_files:
+        for file in BASE_EMOJI_FONT_PATH.iterdir():
+            memory_cleared += file.stat().st_size
+            file.unlink()
+
+    if memory_cleared == 0:
+        print("Looks like everything is cleared already!")
+    else:
+        print(f"Successfully cleared {humanize.naturalsize(memory_cleared)}.")
 
 
 @app.command()

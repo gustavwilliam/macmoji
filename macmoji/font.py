@@ -36,12 +36,17 @@ def generate_base_emoji_ttx(file_name: str):
     os.remove(BASE_EMOJI_FONT_PATH / f"{file_name}.ttf")
 
 
-def base_emoji_process_cleanup():
-    """Removes temporary files generated during base emoji generation."""
+def base_emoji_process_cleanup() -> int:
+    """Removes temporary files generated during base emoji generation and returns memory cleared."""
+    memory_cleared = 0
     for path in [
         BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf",
         BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf",
         Path("macmoji/AppleColorEmoji.ttf"),
         Path("macmoji/.AppleColorEmojiUI.ttf"),
     ]:
-        path.unlink(missing_ok=True)
+        if path.exists():
+            memory_cleared += path.stat().st_size
+            path.unlink()
+
+    return memory_cleared
