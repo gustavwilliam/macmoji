@@ -67,15 +67,21 @@ def generate_base_files(
     print("Generating emoji base files. This will most likely take a few minutes...\n")
 
     with Progress() as progress:
-        task_ttf = progress.add_task("Generating TTF files", total=1)
-        ttx_1 = ProgressTask(
+        task_ttf = ProgressTask(
+            description="Generating TTF files",
+            progress=progress,
+            target=partial(generate_base_emoji_ttf),
+            output_file=BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf",
+            output_size=TTX_SIZE,
+        )  # Dooesn't update incrementally, but still gives a slightly nicer progress bar than the alternative
+        task_ttx_1 = ProgressTask(
             description="Decompiling AppleColorEmoji.ttf",
             progress=progress,
             target=partial(generate_base_emoji_ttx, "AppleColorEmoji"),
             output_file=BASE_EMOJI_FONT_PATH / "AppleColorEmoji-tmp.ttx",
             output_size=TTX_SIZE,
         )
-        ttx_2 = ProgressTask(
+        task_ttx_2 = ProgressTask(
             description="Decompiling .AppleColorEmojiUI.ttf",
             progress=progress,
             target=partial(generate_base_emoji_ttx, ".AppleColorEmojiUI"),
@@ -83,13 +89,12 @@ def generate_base_files(
             output_size=TTX_SIZE,
         )
 
-        generate_base_emoji_ttf()
-        progress.update(task_ttf, completed=1)
-
-        ttx_1.start()
-        ttx_2.start()
-        ttx_1.join()
-        ttx_2.join()
+        task_ttf.start()
+        task_ttf.join()  # Wait for TTF generation to finish before starting TTX generation
+        task_ttx_1.start()
+        task_ttx_2.start()
+        task_ttx_1.join()
+        task_ttx_2.join()
 
     base_emoji_process_cleanup()
     print("\nSuccessfully generated emoji base files and cleaned up!")

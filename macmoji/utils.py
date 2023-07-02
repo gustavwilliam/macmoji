@@ -22,12 +22,12 @@ class ProgressTask:
         self.output_file = output_file
         self.output_size = output_size
         self._task = self.progress.add_task(description, total=output_size)
-        self._active = False
+        self._progress_active = False
         self._target_thread = Thread(target=self.target)
         self._progress_thread = Thread(target=self._progress_runner)
 
     def _progress_runner(self) -> None:
-        while self._active:
+        while self._progress_active:
             with suppress(FileNotFoundError):
                 new_size = self.output_file.stat().st_size
                 self.progress.update(self._task, completed=new_size)
@@ -37,13 +37,13 @@ class ProgressTask:
         self.progress.update(self._task, completed=self.output_size)
 
     def start(self) -> None:
-        self._active = True
+        self._progress_active = True
         self._target_thread.start()
         self._progress_thread.start()
 
     def join(self) -> None:
         self._target_thread.join()
-        self._active = False
+        self._progress_active = False
         self._progress_thread.join()
 
 
