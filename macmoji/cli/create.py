@@ -10,8 +10,8 @@ from macmoji.config import (
     BASE_EMOJI_FONT_PATH,
     DEFAULT_ASSETS_PATH,
     DEFAULT_GENERATED_FONT_PATH,
-    TTF_SIZE,
     TTX_SIZE,
+    ProgressConfig,
 )
 from macmoji.converter import generate_assets
 from macmoji.font import (
@@ -20,7 +20,7 @@ from macmoji.font import (
     generate_base_emoji_ttx,
     generate_ttf_from_ttx,
 )
-from macmoji.utils import ProgressFileTask
+from macmoji.utils import ProgressFileTask, ProgressSimpleTask
 
 app = typer.Typer()
 
@@ -96,14 +96,13 @@ def base_files(
 
     print("Generating emoji base files. This will most likely take a few minutes...\n")
 
-    with Progress() as progress:
-        task_ttf = ProgressFileTask(
+    with Progress(*ProgressConfig.FULL) as progress:
+        task_ttf = ProgressSimpleTask(
             description="Generating TTF files",
             progress=progress,
             target=partial(generate_base_emoji_ttf),
-            output_file=BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf",
-            output_size=TTF_SIZE,
-        )  # Dooesn't update incrementally, but still gives a slightly nicer progress bar than the alternative
+        )
+        task_ttf.start()
         task_ttx_1 = ProgressFileTask(
             description="Decompiling AppleColorEmoji.ttf",
             progress=progress,
@@ -119,7 +118,6 @@ def base_files(
             output_size=TTX_SIZE,
         )
 
-        task_ttf.start()
         task_ttf.join()  # Wait for TTF generation to finish before starting TTX generation
         task_ttx_1.start()
         task_ttx_2.start()

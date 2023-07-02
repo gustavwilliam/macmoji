@@ -1,6 +1,14 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from rich.progress import (
+    Progress,
+    TimeElapsedColumn,
+    TextColumn,
+    BarColumn,
+    TaskProgressColumn,
+    TimeRemainingColumn,
+)
 
 
 class FileType(str, Enum):
@@ -9,6 +17,22 @@ class FileType(str, Enum):
     TTC = ".ttc"
     TTF = ".ttf"
     TTX = ".ttx"
+
+
+class ProgressConfig:
+    FULL = (
+        TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeRemainingColumn(),
+    )
+    DEFAULT = Progress.get_default_columns()
+    TIME = (
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TimeElapsedColumn(),
+    )
 
 
 @dataclass
