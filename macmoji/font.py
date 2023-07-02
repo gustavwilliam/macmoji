@@ -1,10 +1,14 @@
 import os
 from pathlib import Path
 
-from afdko import otc2otf
+from afdko import otc2otf, otf2otc
 from fontTools import ttx
 
-from macmoji.config import BASE_EMOJI_FONT_PATH, AfdkoOptions
+from macmoji.config import (
+    BASE_EMOJI_FONT_PATH,
+    DEFAULT_GENERATED_FONT_PATH,
+    AfdkoOptions,
+)
 
 
 def generate_base_emoji_ttf():
@@ -42,6 +46,18 @@ def generate_ttf_from_ttx(file_name: str):
         BASE_EMOJI_FONT_PATH / f"{file_name}.ttx",
         BASE_EMOJI_FONT_PATH / f"{file_name}.ttf",  # type: ignore
         ttx.Options([], 0),
+    )
+
+
+def generate_ttc_from_ttf():
+    """Generates a TTC file from TTF files."""
+    otf2otc.run(
+        [
+            "-o",
+            str(DEFAULT_GENERATED_FONT_PATH),
+            str(BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf"),
+            str(BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf"),
+        ]
     )
 
 

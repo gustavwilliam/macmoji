@@ -4,7 +4,7 @@ from pathlib import Path
 import typer
 from rich import print
 from typing_extensions import Annotated
-from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+from rich.progress import Progress
 
 from macmoji.config import (
     BASE_EMOJI_FONT_PATH,
@@ -18,9 +18,10 @@ from macmoji.font import (
     base_emoji_process_cleanup,
     generate_base_emoji_ttf,
     generate_base_emoji_ttx,
+    generate_ttc_from_ttf,
     generate_ttf_from_ttx,
 )
-from macmoji.utils import ProgressFileTask, ProgressSimpleTask
+from macmoji.utils import ProgressFileTask, ProgressSimpleTask, ProgressCompletedTask
 
 app = typer.Typer()
 
@@ -134,40 +135,38 @@ def font(
         default=DEFAULT_ASSETS_PATH,
         help="Path to directory with generated asset files.",
     ),
-    output_dir: Path = typer.Argument(
-        DEFAULT_GENERATED_FONT_PATH,
-        help="Path to the output directory of sized PNG assets.",
-    ),
 ):
     """Generate emoji font from a PNG assets folder."""
     base_files(force=False)  # Make sure base files are generated
 
-    print(f"Generating emoji font. This will most likely take a few minutes...\n")
-    with Progress(
-        TextColumn("[progress.description]{task.description}"),
-        SpinnerColumn(
-            spinner_name="aesthetic",
-            style="bold magenta",
-            finished_text="[bold green]▰▰▰▰▰▰▰[/]",
-        ),
-        TimeElapsedColumn(),
-    ) as progress:
-        # Doesn't use ProgressTask, since the output files can't be tracked while generating
-        task_ttx_1 = progress.add_task(
-            "Compiling AppleColorEmoji.ttx",
-            total=1,
-            start=False,
+    # TODO: Insert assets into base files.
+
+    with Progress(*ProgressConfig.TIME) as progress:
+        _ = ProgressCompletedTask(
+            description="Generating base emoji files",
+            progress=progress,
         )
-        task_ttx_2 = progress.add_task(
-            "Compiling .AppleColorEmojiUI.ttx",
-            total=1,
-            start=False,
+        task_ttx_1 = ProgressSimpleTask(
+            description="Compiling AppleColorEmoji.ttx",
+            progress=progress,
+            target=partial(generate_ttf_from_ttx, "AppleColorEmoji"),
+        )
+        task_ttx_2 = ProgressSimpleTask(
+            description="Compiling .AppleColorEmojiUI.ttx",
+            progress=progress,
+            target=partial(generate_ttf_from_ttx, ".AppleColorEmojiUI"),
+        )
+        task_ttc = ProgressFileTask(
+            description="Generating TTC file",
+            progress=progress,
+            target=partial(generate_ttc_from_ttf),
+            output_file=DEFAULT_GENERATED_FONT_PATH,
+            output_size=190000000,
         )
 
-        progress.start_task(task_ttx_1)
-        generate_ttf_from_ttx("AppleColorEmoji")
-        progress.update(task_ttx_1, completed=1)
-
-        progress.start_task(task_ttx_2)
-        generate_ttf_from_ttx(".AppleColorEmojiUI")
-        progress.update(task_ttx_2, completed=1)
+        task_ttx_1.start()
+        task_ttx_2.start()
+        task_ttx_1.join()
+        task_ttx_2.join()
+        task_ttc.start()
+        task_ttc.join()

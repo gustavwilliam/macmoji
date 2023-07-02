@@ -89,5 +89,19 @@ class ProgressSimpleTask(ProgressTask):
         pass
 
 
+class ProgressCompletedTask(ProgressTask):
+    def __init__(
+        self,
+        description: str,
+        progress: Progress,
+    ) -> None:
+        super().__init__(description, progress, partial(lambda: None))
+        self.progress.update(self.task, total=1)
+        self.progress.update(self.task, completed=1)
+
+    def progress_loop(self) -> None:
+        pass
+
+
 def asset_file_name(unicode: str, size: int):
     return ASSET_FILE_NAME.format(unicode=unicode, size=size)
