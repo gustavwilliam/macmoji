@@ -3,25 +3,18 @@ from pathlib import Path
 
 import typer
 from rich import print
-from typing_extensions import Annotated
 from rich.progress import Progress
+from typing_extensions import Annotated
 
-from macmoji.config import (
-    BASE_EMOJI_FONT_PATH,
-    DEFAULT_ASSETS_PATH,
-    DEFAULT_GENERATED_FONT_PATH,
-    TTX_SIZE,
-    ProgressConfig,
-)
+from macmoji.config import (BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH,
+                            DEFAULT_GENERATED_FONT_PATH, TTX_SIZE,
+                            ProgressConfig)
 from macmoji.converter import generate_assets
-from macmoji.font import (
-    base_emoji_process_cleanup,
-    generate_base_emoji_ttf,
-    generate_base_emoji_ttx,
-    generate_ttc_from_ttf,
-    generate_ttf_from_ttx,
-)
-from macmoji.utils import ProgressFileTask, ProgressSimpleTask, ProgressCompletedTask
+from macmoji.font import (base_emoji_process_cleanup, generate_base_emoji_ttf,
+                          generate_base_emoji_ttx, generate_ttc_from_ttf,
+                          generate_ttf_from_ttx)
+from macmoji.utils import (ProgressCompletedTask, ProgressFileTask,
+                           ProgressSimpleTask)
 
 app = typer.Typer()
 

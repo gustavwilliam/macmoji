@@ -1,20 +1,18 @@
-from abc import ABC, abstractmethod
-from enum import Enum
+import inspect
+import sys
 import time
-from contextlib import suppress
+import types
+from abc import ABC, abstractmethod
+from contextlib import contextmanager, suppress
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from threading import Thread
+from typing import Iterator
 
 from rich.progress import Progress
 
 from macmoji.config import ASSET_FILE_NAME
-
-import inspect
-import sys
-import types
-from contextlib import contextmanager
-from typing import Iterator
 
 
 @contextmanager

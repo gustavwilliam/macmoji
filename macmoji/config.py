@@ -1,14 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from rich.progress import (
-    Progress,
-    TimeElapsedColumn,
-    TextColumn,
-    BarColumn,
-    TaskProgressColumn,
-    TimeRemainingColumn,
-)
+
+from rich.progress import (BarColumn, Progress, TaskProgressColumn, TextColumn,
+                           TimeElapsedColumn, TimeRemainingColumn)
 
 
 class FileType(str, Enum):

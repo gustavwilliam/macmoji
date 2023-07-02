@@ -2,22 +2,16 @@ import importlib.metadata
 import os
 from pathlib import Path
 from typing import Optional
-import humanize
 
+import humanize
 import typer
 from rich import print
 
 import macmoji.cli.create
-from macmoji.config import (
-    BASE_EMOJI_FONT_PATH,
-    DEFAULT_ASSETS_PATH,
-    DEFAULT_GENERATED_FONT_PATH,
-)
-from macmoji.font import (
-    base_emoji_process_cleanup,
-    generate_base_emoji_ttf,
-    generate_base_emoji_ttx,
-)
+from macmoji.config import (BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH,
+                            DEFAULT_GENERATED_FONT_PATH)
+from macmoji.font import (base_emoji_process_cleanup, generate_base_emoji_ttf,
+                          generate_base_emoji_ttx)
 
 app = typer.Typer()
 app.add_typer(macmoji.cli.create.app, name="create")

@@ -1,10 +1,6 @@
 from .cli.main import app
-from .config import (
-    BASE_EMOJI_FONT_PATH,
-    DEFAULT_ASSETS_PATH,
-    DEFAULT_GENERATED_FONT_PATH,
-    DEFAULT_SAVE_PATH,
-)
+from .config import (BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH,
+                     DEFAULT_GENERATED_FONT_PATH, DEFAULT_SAVE_PATH)
 
 # Create default file saving directories if they doesn't already exist
 DEFAULT_SAVE_PATH.mkdir(parents=True, exist_ok=True)

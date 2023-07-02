@@ -4,11 +4,8 @@ from pathlib import Path
 from afdko import otc2otf, otf2otc
 from fontTools import ttx
 
-from macmoji.config import (
-    BASE_EMOJI_FONT_PATH,
-    DEFAULT_GENERATED_FONT_PATH,
-    AfdkoOptions,
-)
+from macmoji.config import (BASE_EMOJI_FONT_PATH, DEFAULT_GENERATED_FONT_PATH,
+                            AfdkoOptions)
 from macmoji.utils import suppress_stdout
 
 
