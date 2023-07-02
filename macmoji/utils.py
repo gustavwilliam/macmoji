@@ -10,6 +10,32 @@ from rich.progress import Progress
 
 from macmoji.config import ASSET_FILE_NAME
 
+import inspect
+import sys
+import types
+from contextlib import contextmanager
+from typing import Iterator
+
+
+@contextmanager
+def suppress_stdout(function: types.FunctionType) -> Iterator:
+    _original_write = sys.stdout.write
+
+    def write_hook(s: str) -> int:
+        if all(
+            frame_info.frame.f_code is not function.__code__
+            for frame_info in inspect.stack()
+        ):
+            return _original_write(s)
+        else:
+            return 0
+
+    sys.stdout.write = write_hook
+    try:
+        yield
+    finally:
+        sys.stdout.write = _original_write
+
 
 class ProgressTask(ABC):
     def __init__(

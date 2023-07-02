@@ -9,6 +9,7 @@ from macmoji.config import (
     DEFAULT_GENERATED_FONT_PATH,
     AfdkoOptions,
 )
+from macmoji.utils import suppress_stdout
 
 
 def generate_base_emoji_ttf():
@@ -51,14 +52,16 @@ def generate_ttf_from_ttx(file_name: str):
 
 def generate_ttc_from_ttf():
     """Generates a TTC file from TTF files."""
-    otf2otc.run(
-        [
-            "-o",
-            str(DEFAULT_GENERATED_FONT_PATH),
-            str(BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf"),
-            str(BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf"),
-        ]
-    )
+    # Suppress stdout from otf2otc, as it prints a lot of unnecessary information
+    with suppress_stdout(function=otf2otc.run):
+        otf2otc.run(
+            [
+                "-o",
+                str(DEFAULT_GENERATED_FONT_PATH),
+                str(BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf"),
+                str(BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf"),
+            ]
+        )
 
 
 def base_emoji_process_cleanup() -> int:
