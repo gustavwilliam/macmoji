@@ -1,5 +1,6 @@
 import importlib.metadata
 from functools import partial
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -7,10 +8,14 @@ import humanize
 import typer
 from rich import print
 from rich.progress import Progress
-from typing_extensions import Annotated
 
 import macmoji.cli.create
-from macmoji.config import BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH, TTX_SIZE
+from macmoji.config import (
+    BASE_EMOJI_FONT_PATH,
+    DEFAULT_ASSETS_PATH,
+    DEFAULT_GENERATED_FONT_PATH,
+    TTX_SIZE,
+)
 from macmoji.font import (
     base_emoji_process_cleanup,
     generate_base_emoji_ttf,
@@ -126,10 +131,45 @@ def clear_cache(
 
 @app.command()
 def install(
-    font: Annotated[Path, typer.Argument(help="`.ttc` font file to install")],
+    font: Path = typer.Argument(
+        DEFAULT_GENERATED_FONT_PATH, help="`.ttc` font file to install"
+    ),
+    output_dir: Path = typer.Option(
+        Path("~/Library/Fonts").expanduser(),
+        "--output-path",
+        "-o",
+        help="Directory to install the font inside.",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite active custom emoji font without asking.",
+    ),
 ) -> None:
     """Install an emoji font to the current user's font directory."""
-    raise NotImplementedError()
+    output_path = output_dir / "Apple Color Emoji.ttc"
+    font_at_output_path = output_path.exists()
+
+    if not font.exists():
+        raise typer.BadParameter(f"Font file '{font}' does not exist.")
+    if not output_dir.is_dir():
+        raise typer.BadParameter(
+            f"Provided output directory '{output_dir}' is not a directory. Please create it or use a different directory before attempting to install."
+        )
+    if font_at_output_path and not force:
+        if not typer.confirm(
+            f"Custom emoji font already installed at '{output_path}', overwrite?"
+        ):
+            raise typer.Abort()
+
+    os.replace(font, output_path)
+    print(
+        f"Successfully installed at '{output_path}'!{' (1 font overwritten)' if font_at_output_path else ''}"
+    )
+    print(
+        "[bold yellow]\nWarning:[/] the emojis may not appear everywhere until you've restarted currently open applications or the computer."
+    )
 
 
 @app.command()
