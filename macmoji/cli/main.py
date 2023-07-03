@@ -8,10 +8,12 @@ import typer
 from rich import print
 
 import macmoji.cli.create
-from macmoji.config import (BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH,
-                            DEFAULT_GENERATED_FONT_PATH)
-from macmoji.font import (base_emoji_process_cleanup, generate_base_emoji_ttf,
-                          generate_base_emoji_ttx)
+from macmoji.config import (
+    BASE_EMOJI_FONT_PATH,
+    DEFAULT_ASSETS_PATH,
+    DEFAULT_GENERATED_FONT_PATH,
+)
+from macmoji.font import base_emoji_process_cleanup
 
 app = typer.Typer()
 app.add_typer(macmoji.cli.create.app, name="create")
@@ -28,7 +30,7 @@ def main(
     version: Optional[bool] = typer.Option(
         None,
         "--version",
-        "-V",
+        "-v",
         help="Show the application's version and exit.",
         callback=_version_callback,
         is_eager=True,
@@ -40,9 +42,10 @@ def main(
 
 @app.command()
 def clear_cache(
-    include_base_files: bool = typer.Option(
+    clear_all: bool = typer.Option(
         False,
-        "--include-base-files",
+        "--all",
+        "-a",
         help="Also clear the emoji base files. Frees more than 1GB of memory, but adds multiple minutes to the next time an emoji font is generated. This cannot be undone.",
     ),
 ) -> None:
@@ -52,7 +55,7 @@ def clear_cache(
     for file in DEFAULT_ASSETS_PATH.iterdir():
         memory_cleared += file.stat().st_size
         file.unlink()
-    if include_base_files:
+    if clear_all:
         for file in BASE_EMOJI_FONT_PATH.iterdir():
             memory_cleared += file.stat().st_size
             file.unlink()
@@ -66,11 +69,12 @@ def clear_cache(
 @app.command()
 def install(
     font: Path = typer.Argument(
-        DEFAULT_GENERATED_FONT_PATH, help="`.ttc` font file to install"
+        DEFAULT_GENERATED_FONT_PATH,
+        help="`.ttc` font file to install",
     ),
     output_dir: Path = typer.Option(
         Path("~/Library/Fonts").expanduser(),
-        "--output-path",
+        "--output-dir",
         "-o",
         help="Directory to install the font inside.",
     ),
@@ -99,10 +103,9 @@ def install(
 
     os.replace(font, output_path)
     print(
-        f"Successfully installed at '{output_path}'!{' (1 font overwritten)' if font_at_output_path else ''}"
-    )
-    print(
-        "[bold yellow]\nWarning:[/] the emojis may not appear everywhere until you've restarted currently open applications or the computer."
+        ("\n" if font_at_output_path else "")
+        + f"Successfully installed at '{output_path}'!{' (1 font overwritten)' if font_at_output_path else ''}",
+        "[bold yellow]\nWarning:[/] the emojis may not appear everywhere until you've restarted currently open applications or the computer.",
     )
 
 

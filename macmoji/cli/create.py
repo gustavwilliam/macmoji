@@ -6,15 +6,22 @@ from rich import print
 from rich.progress import Progress
 from typing_extensions import Annotated
 
-from macmoji.config import (BASE_EMOJI_FONT_PATH, DEFAULT_ASSETS_PATH,
-                            DEFAULT_GENERATED_FONT_PATH, TTX_SIZE,
-                            ProgressConfig)
+from macmoji.config import (
+    BASE_EMOJI_FONT_PATH,
+    DEFAULT_ASSETS_PATH,
+    DEFAULT_GENERATED_FONT_PATH,
+    TTX_SIZE,
+    ProgressConfig,
+)
 from macmoji.converter import generate_assets
-from macmoji.font import (base_emoji_process_cleanup, generate_base_emoji_ttf,
-                          generate_base_emoji_ttx, generate_ttc_from_ttf,
-                          generate_ttf_from_ttx)
-from macmoji.utils import (ProgressCompletedTask, ProgressFileTask,
-                           ProgressSimpleTask)
+from macmoji.font import (
+    base_emoji_process_cleanup,
+    generate_base_emoji_ttf,
+    generate_base_emoji_ttx,
+    generate_ttc_from_ttf,
+    generate_ttf_from_ttx,
+)
+from macmoji.utils import ProgressCompletedTask, ProgressFileTask, ProgressSimpleTask
 
 app = typer.Typer()
 
@@ -35,7 +42,10 @@ def assets(
         help="Path to the output directory of sized PNG assets.",
     ),
     verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Print ignored files to stdout."
+        False,
+        "--verbose",
+        "-v",
+        help="Print ignored files to stdout.",
     ),
     force: bool = typer.Option(
         False,
@@ -96,7 +106,6 @@ def base_files(
             progress=progress,
             target=partial(generate_base_emoji_ttf),
         )
-        task_ttf.start()
         task_ttx_1 = ProgressFileTask(
             description="Decompiling AppleColorEmoji.ttf",
             progress=progress,
@@ -112,6 +121,7 @@ def base_files(
             output_size=TTX_SIZE,
         )
 
+        task_ttf.start()
         task_ttf.join()  # Wait for TTF generation to finish before starting TTX generation
         task_ttx_1.start()
         task_ttx_2.start()

@@ -32,19 +32,21 @@ def generate_assets(dir_path: Path, output_dir: Path) -> List[Path]:
             ignored_paths.append(fp)
             continue
 
-        save_scaled = svg2asset if fp.suffix == FileType.SVG else png2asset
+        convert_function = svg2asset if fp.suffix == FileType.SVG else png2asset
         for size in ASSET_SIZES:
             output_path = output_dir / asset_file_name(fp.name, size)
-            save_scaled(fp, output_path, size)
+            convert_function(fp, output_path, size)
 
     return ignored_paths
 
 
 def svg2asset(path: Path, output_path: Path, size: int):
+    """Create a PNG asset from an SVG file and save it at the given path."""
     cairosvg.svg2png(url=str(path), write_to=str(output_path), output_height=size)
 
 
 def png2asset(path: Path, output_path: Path, size: int):
+    """Create a PNG asset from a PNG file and save it at the given path."""
     with Image.open(path) as img:
         scale = size / max(img.size)
         scaled_img = img.resize((int(img.width * scale), int(img.height * scale)))
