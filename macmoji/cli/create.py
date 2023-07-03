@@ -45,7 +45,7 @@ def assets(
         False,
         "--verbose",
         "-v",
-        help="Print ignored files to stdout.",
+        help="Print ignored files and why they were ignored to stdout.",
     ),
     force: bool = typer.Option(
         False,
@@ -62,16 +62,17 @@ def assets(
             default=False,
             abort=True,
         )
-    ignored_paths = generate_assets(input_dir, output_dir)
+    try:
+        ignored_paths = generate_assets(input_dir, output_dir)
+    except ValueError as e:
+        raise typer.BadParameter(str(e))
 
-    print(
-        f"Done! ({len(ignored_paths)} ignored paths)\n\nSaved assets to: {output_dir} "
-    )
-    if verbose:
-        if ignored_paths:
-            print(f"The following paths were ignored: {ignored_paths}")
-        else:
-            print(f"No files were ignored")
+    print(f"Done! Saved assets to: '{output_dir}'")
+    if ignored_paths:
+        print(
+            "\nIgnored paths:",
+            *(f"\n- '{path}' {reason}" for path, reason in ignored_paths),
+        )
     if not output_dir_empty and not output_dir == DEFAULT_ASSETS_PATH:
         print(
             f"[bold yellow]\nWarning:[/bold yellow] saved to non-empty directory. Previously existent files may interfere with the assets when generating the font."
