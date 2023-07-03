@@ -1,3 +1,5 @@
+import functools
+import xml.etree.ElementTree as ET
 import inspect
 import sys
 import time
@@ -6,11 +8,16 @@ from contextlib import contextmanager, suppress
 from functools import partial
 from pathlib import Path
 from threading import Thread
-from typing import Callable, Iterator
+from typing import Callable, Generator, Iterator
+import emoji
 
 from rich.progress import Progress
 
-from macmoji.config import ASSET_FILE_NAME
+from macmoji.config import (
+    ASSET_FILE_NAME,
+    BASE_EMOJI_FONT_PATH,
+    DEFAULT_SAVE_PATH,
+)
 
 
 @contextmanager
@@ -160,3 +167,94 @@ class ProgressCompletedTask(ProgressTask):
 def asset_file_name(unicode: str, size: int):
     """Returns the file name of an asset file used for generating fonts."""
     return ASSET_FILE_NAME.format(unicode=unicode, size=size)
+
+
+def _get_valid_emoji_names() -> Generator[str, None, None]:
+    """Extract all valid emoji names from TTX files."""
+    root = ET.parse(BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttx").getroot()
+
+    if not (glyphParent := root.find("GlyphOrder")):
+        raise ValueError("Invalid/incomplete TTX file. Missing `GlyphOrder` element.")
+    if not (glyphs := glyphParent.iter("GlyphID")):
+        raise ValueError("Invalid/incomplete TTX file. Missing `GlyphID` elements.")
+
+    for glyph in glyphs:
+        if not (name := glyph.get("name")):
+            raise ValueError("Invalid/incomplete TTX file. Missing glyph name.")
+        yield name
+
+
+@functools.cache
+def valid_emoji_names() -> frozenset[str]:
+    """
+    Returns a frozenset of all valid emoji names.
+
+    The function uses `@functools.cache` to avoid having to open the cache file every
+    time the function is called. If you modify the TTX files, make sure to clear run
+    `functools.cache_clear()` to clear the cache before relying on this function.
+
+    ---
+
+    `name` is the name of the emoji as used by Apple in the TTX files. The
+    general format is : `uXXXXX.0-6.MWBGLR`, with the following meanings:
+        - `uXXXXX`: Unicode codepoint of the base emoji, ignoring leading zeroes.
+            Codepoint are allowed to have less than 5 digits is all 5 aren't needed.
+        - `0-6`: Skintone modifiers. Only 0-5 (going from lightest to darkest)
+            are used in most emojis (see note about 6 below). Multiple can ve used
+            at once in some emojis.
+        - `MWBG`: Gender modifiers. M=Male, F=Female, B=Boy, G=Girl, L=Left, R=Right.
+            Multiple can be used at once in some emojis.
+
+    Examples of valid `name` and their meanings:
+        - `u1F385.2`: Santa Claus, Medium-Light Skin Tone
+        - `u1F3C3.0.M`: Man Running Facing Right, No Skin Tone
+        - `u1F469_u1F91D_u1F468.55`: Woman and Man Holding Hands: Dark Skin Tone
+
+    TTGlyph outlines under `glyf` and control characters can't currently be modified using
+    MacMoji. Most emojis can be changed completely fine without this though.
+
+    Note: for `u1F9D1_u1F91D_u1F9D1.XX`, X is 1-6 instead of 0-5, where the meaning
+    of 6 is the same as 0 in the rest of the formats. From my observations,
+    these are the only emojis with 6 modifiers.
+    """
+    file_path = DEFAULT_SAVE_PATH / "valid_emoji_names.txt"
+
+    if file_path.is_file():
+        return frozenset(file_path.read_text().splitlines())
+    else:
+        with file_path.open("w") as f:
+            names = frozenset(_get_valid_emoji_names())
+            f.write("\n".join(names))  # Cache for next run
+
+            return names
+
+
+def is_valid_emoji(name):
+    """
+    Checks if an emoji name is valid based on emoji names in TTX files.
+
+    ---
+
+    `name` is the name of the emoji as used by Apple in the TTX files. The
+    general format is : `uXXXXX.0-6.MWBGLR`, with the following meanings:
+        - `uXXXXX`: Unicode codepoint of the base emoji, ignoring leading zeroes.
+            Codepoint are allowed to have less than 5 digits is all 5 aren't needed.
+        - `0-6`: Skintone modifiers. Only 0-5 (going from lightest to darkest)
+            are used in most emojis (see note about 6 below). Multiple can ve used
+            at once in some emojis.
+        - `MWBG`: Gender modifiers. M=Male, F=Female, B=Boy, G=Girl, L=Left, R=Right.
+            Multiple can be used at once in some emojis.
+
+    Examples of valid `name` and their meanings:
+        - `u1F385.2`: Santa Claus, Medium-Light Skin Tone
+        - `u1F3C3.0.M`: Man Running Facing Right, No Skin Tone
+        - `u1F469_u1F91D_u1F468.55`: Woman and Man Holding Hands: Dark Skin Tone
+
+    TTGlyph outlines under `glyf` and control characters can't currently be modified using
+    MacMoji. Most emojis can be changed completely fine without this though.
+
+    Note: for `u1F9D1_u1F91D_u1F9D1.XX`, X is 1-6 instead of 0-5, where the meaning
+    of 6 is the same as 0 in the rest of the formats. From my observations,
+    these are the only emojis with 6 modifiers.
+    """
+    return name in valid_emoji_names()

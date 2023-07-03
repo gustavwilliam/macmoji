@@ -1,5 +1,6 @@
 from functools import partial
 from pathlib import Path
+import shutil
 
 import typer
 from rich import print
@@ -41,12 +42,6 @@ def assets(
         DEFAULT_ASSETS_PATH,
         help="Path to the output directory of sized PNG assets.",
     ),
-    verbose: bool = typer.Option(
-        False,
-        "--verbose",
-        "-v",
-        help="Print ignored files and why they were ignored to stdout.",
-    ),
     force: bool = typer.Option(
         False,
         "--force",
@@ -62,12 +57,18 @@ def assets(
             default=False,
             abort=True,
         )
+    if output_dir == DEFAULT_ASSETS_PATH:
+        # Clear output directory if it's the MacMoji default (not user provided)
+        shutil.rmtree(output_dir)
+        output_dir.mkdir()
     try:
-        ignored_paths = generate_assets(input_dir, output_dir)
+        n_successful, ignored_paths = generate_assets(input_dir, output_dir)
     except ValueError as e:
         raise typer.BadParameter(str(e))
 
-    print(f"Done! Saved assets to: '{output_dir}'")
+    print(
+        f"Done! Saved assets for {n_successful} emoji{'' if n_successful == 1 else 's'} to: '{output_dir}'"
+    )
     if ignored_paths:
         print(
             "\nIgnored paths:",
