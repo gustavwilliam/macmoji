@@ -1,5 +1,9 @@
+from contextlib import contextmanager
+import inspect
 import os
 from pathlib import Path
+import sys
+from typing import Callable, Iterator
 
 from afdko import otc2otf, otf2otc
 from fontTools import ttx
@@ -9,7 +13,35 @@ from macmoji.config import (
     DEFAULT_GENERATED_FONT_PATH,
     AfdkoOptions,
 )
-from macmoji.utils import suppress_stdout
+
+
+@contextmanager
+def suppress_stdout(function: Callable) -> Iterator:
+    """
+    Suppress stdout from a function.
+
+    Useful with functions that produce a lot of unwanted output to stdout.
+    """
+    _original_write = sys.stdout.write
+
+    def write_hook(s: str) -> int:
+        """Hook to replace stdout.write() with a function that filters out code from `function`."""
+        if all(
+            frame_info.frame.f_code is not function.__code__
+            for frame_info in inspect.stack()
+        ):
+            # Process output from other function normally
+            return _original_write(s)
+        else:
+            # Suppress output from `function`
+            return 0
+
+    sys.stdout.write = write_hook
+    try:
+        yield
+    finally:
+        # Restore stdout when exiting context manager
+        sys.stdout.write = _original_write
 
 
 def generate_base_emoji_ttf():
@@ -58,8 +90,8 @@ def generate_ttc_from_ttf():
             [
                 "-o",
                 str(DEFAULT_GENERATED_FONT_PATH),
-                str(BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf"),
-                str(BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf"),
+                str(BASE_EMOJI_FONT_PATH / "AppleColorEmoji-usr.ttf"),
+                str(BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-usr.ttf"),
             ]
         )
 
@@ -70,8 +102,12 @@ def base_emoji_process_cleanup() -> int:
     for path in [
         BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf",
         BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf",
+        BASE_EMOJI_FONT_PATH / "AppleColorEmoji-usr.ttf",
+        BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-usr.ttf",
         BASE_EMOJI_FONT_PATH / "AppleColorEmoji-tmp.ttx",
+        BASE_EMOJI_FONT_PATH / "AppleColorEmoji-usr.ttx",
         BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-tmp.ttx",
+        BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-usr.ttx",
         Path("macmoji/AppleColorEmoji.ttf"),
         Path("macmoji/.AppleColorEmojiUI.ttf"),
     ]:

@@ -1,52 +1,43 @@
 import functools
 import xml.etree.ElementTree as ET
-import inspect
-import sys
 import time
 from abc import ABC, abstractmethod
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from functools import partial
 from pathlib import Path
 from threading import Thread
-from typing import Callable, Generator, Iterator
-import emoji
+from typing import Generator
 
 from rich.progress import Progress
+from rich.panel import Panel
 
 from macmoji.config import (
     ASSET_FILE_NAME,
     BASE_EMOJI_FONT_PATH,
     DEFAULT_SAVE_PATH,
+    TTX_SIZE,
+    ProgressConfig,
+)
+from macmoji.font import (
+    base_emoji_process_cleanup,
+    generate_base_emoji_ttf,
+    generate_base_emoji_ttx,
 )
 
 
-@contextmanager
-def suppress_stdout(function: Callable) -> Iterator:
-    """
-    Suppress stdout from a function.
+class ProgressPanel(Progress):
+    def __init__(self, title: str, *args, **kwargs) -> None:
+        self.title = title  # Throws AttributeError if this like is below the next
+        super().__init__(*args, **kwargs)
 
-    Useful with functions that produce a lot of unwanted output to stdout.
-    """
-    _original_write = sys.stdout.write
-
-    def write_hook(s: str) -> int:
-        """Hook to replace stdout.write() with a function that filters out code from `function`."""
-        if all(
-            frame_info.frame.f_code is not function.__code__
-            for frame_info in inspect.stack()
-        ):
-            # Process output from other function normally
-            return _original_write(s)
-        else:
-            # Suppress output from `function`
-            return 0
-
-    sys.stdout.write = write_hook
-    try:
-        yield
-    finally:
-        # Restore stdout when exiting context manager
-        sys.stdout.write = _original_write
+    def get_renderables(self):
+        yield Panel(
+            self.make_tasks_table(self.tasks),
+            title=f"[bold]{self.title}[/]",
+            title_align="left",
+            expand=False,
+            highlight=True,
+        )
 
 
 class ProgressTask(ABC):
@@ -55,6 +46,8 @@ class ProgressTask(ABC):
         description: str,
         progress: Progress,
         target: partial,
+        *,
+        progress_runner: bool = True,
     ) -> None:
         """
         Abstract base class for threaded rich progress bar tasks.
@@ -66,24 +59,30 @@ class ProgressTask(ABC):
         self.description = description
         self.progress = progress
         self.target = target
+        self.progress_runner = progress_runner
         self.task = self.progress.add_task(description, total=None)
         self._progress_active = False
         self._target_thread = Thread(target=self.target)
         self._progress_thread = Thread(target=self._progress_runner)
 
-    def _progress_runner(self) -> None:
-        while self._progress_active:
-            self.progress_loop()
-            time.sleep(0.1)
-
-        # Ensure progress bar is at 100% when task is complete, even if `task.total` isn't accurate
+    def _set_completed(self) -> None:
+        """Set progress bar to 100%."""
         if self.progress.tasks[self.task].total is None:
             self.progress.update(self.task, total=1)
             self.progress.update(self.task, completed=1)
         else:
             self.progress.update(
-                self.task, completed=self.progress.tasks[self.task].total
+                self.task, total=self.progress.tasks[self.task].completed
             )
+
+    def _progress_runner(self) -> None:
+        if not self.progress_runner:
+            return
+        while self._progress_active:
+            self.progress_loop()
+            time.sleep(0.1)
+
+        self._set_completed()
 
     @abstractmethod
     def progress_loop(self) -> None:
@@ -106,6 +105,12 @@ class ProgressTask(ABC):
         self._target_thread.join()
         self._progress_active = False
         self._progress_thread.join()
+        self._set_completed()
+
+    def run(self) -> None:
+        """Run target and progress bar until target is done. This is a blocking function."""
+        self.start()
+        self.join()
 
 
 class ProgressFileTask(ProgressTask):
@@ -137,7 +142,7 @@ class ProgressSimpleTask(ProgressTask):
         target: partial,
     ) -> None:
         """Simple progress bar task that runs a target function, with a simple animated progress bar."""
-        super().__init__(description, progress, target)
+        super().__init__(description, progress, target, progress_runner=False)
         # Since `ProgressTask.task` total is set to `None` by default, the progress bar will be animated.
         # Could also set `start` to `False` for similar effect, but that would stop TimeElapsedColumn from updating.
 
@@ -156,7 +161,12 @@ class ProgressCompletedTask(ProgressTask):
 
         Useful for tasks that are already completed, but should still get added to the progress bar.
         """
-        super().__init__(description, progress, partial(lambda: None))
+        super().__init__(
+            description,
+            progress,
+            partial(lambda: None),
+            progress_runner=False,
+        )
         self.progress.update(self.task, total=1)
         self.progress.update(self.task, completed=1)
 
@@ -169,8 +179,65 @@ def asset_file_name(unicode: str, size: int):
     return ASSET_FILE_NAME.format(unicode=unicode, size=size)
 
 
+def base_files_exist() -> bool:
+    """Returns `True` if the base emoji files have already been generated."""
+    required_files = [
+        BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttx",
+        BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttx",
+    ]
+    return all(map(Path.exists, required_files))
+
+
+def generate_base_files(*, force: bool, terminal_output: bool = True) -> None:
+    """
+    Generate base emoji files from default emoji files.
+
+    If `force` is `True`, the base files will be generated even if they already exist.
+    """
+    if not force and base_files_exist():
+        base_emoji_process_cleanup()
+        return
+
+    if terminal_output:
+        print("Generating emoji base files. This will only have to be done once.\n")
+
+        with ProgressPanel("Generating base files", *ProgressConfig.FULL) as progress:
+            ProgressSimpleTask(
+                description="Generating TTF files",
+                progress=progress,
+                target=partial(generate_base_emoji_ttf),
+            ).run()
+            task_1 = ProgressFileTask(
+                description="Decompiling AppleColorEmoji.ttf",
+                progress=progress,
+                target=partial(generate_base_emoji_ttx, "AppleColorEmoji"),
+                output_file=BASE_EMOJI_FONT_PATH / "AppleColorEmoji-tmp.ttx",
+                output_size=TTX_SIZE,
+            )
+            task_2 = ProgressFileTask(
+                description="Decompiling .AppleColorEmojiUI.ttf",
+                progress=progress,
+                target=partial(generate_base_emoji_ttx, ".AppleColorEmojiUI"),
+                output_file=BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-tmp.ttx",
+                output_size=TTX_SIZE,
+            )
+            task_1.run()
+            task_2.run()
+            task_1.join()
+            task_2.join()
+
+        base_emoji_process_cleanup()
+        print("\nSuccessfully generated emoji base files and cleaned up!")
+    else:
+        generate_base_emoji_ttf()
+        generate_base_emoji_ttx("AppleColorEmoji")
+        generate_base_emoji_ttx(".AppleColorEmojiUI")
+        base_emoji_process_cleanup()
+
+
 def _get_valid_emoji_names() -> Generator[str, None, None]:
     """Extract all valid emoji names from TTX files."""
+    generate_base_files(force=False)
     root = ET.parse(BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttx").getroot()
 
     if not (glyphParent := root.find("GlyphOrder")):
@@ -219,7 +286,7 @@ def valid_emoji_names() -> frozenset[str]:
     """
     file_path = DEFAULT_SAVE_PATH / "valid_emoji_names.txt"
 
-    if file_path.is_file():
+    if file_path.is_file() and file_path.stat().st_size > 0:
         return frozenset(file_path.read_text().splitlines())
     else:
         with file_path.open("w") as f:

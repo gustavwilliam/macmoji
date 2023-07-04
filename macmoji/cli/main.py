@@ -12,6 +12,7 @@ from macmoji.config import (
     BASE_EMOJI_FONT_PATH,
     DEFAULT_ASSETS_PATH,
     DEFAULT_GENERATED_FONT_PATH,
+    DEFAULT_SAVE_PATH,
 )
 from macmoji.font import base_emoji_process_cleanup
 
@@ -59,6 +60,10 @@ def clear_cache(
         for file in BASE_EMOJI_FONT_PATH.iterdir():
             memory_cleared += file.stat().st_size
             file.unlink()
+
+        if (emoji_names_file := DEFAULT_SAVE_PATH / "valid_emoji_names.txt").exists():
+            memory_cleared += emoji_names_file.stat().st_size
+            emoji_names_file.unlink()
 
     if memory_cleared == 0:
         print("Looks like everything is cleared already!")

@@ -32,6 +32,7 @@ class ProgressConfig:
     >>>     ...
     """
 
+    DEFAULT = Progress.get_default_columns()
     FULL = (
         TextColumn("[progress.description]{task.description}"),
         TimeElapsedColumn(),
@@ -39,7 +40,6 @@ class ProgressConfig:
         TaskProgressColumn(),
         TimeRemainingColumn(),
     )
-    DEFAULT = Progress.get_default_columns()
     TIME = (
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
