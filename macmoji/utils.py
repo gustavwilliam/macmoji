@@ -263,7 +263,7 @@ def valid_emoji_names() -> frozenset[str]:
     ---
 
     `name` is the name of the emoji as used by Apple in the TTX files. The
-    general format is : `uXXXXX.0-6.MWBGLR`, with the following meanings:
+    general format is: `uXXXXX.0-6.MWBGLR`, with the following meanings:
         - `uXXXXX`: Unicode codepoint of the base emoji, ignoring leading zeroes.
             Codepoint are allowed to have less than 5 digits is all 5 aren't needed.
         - `0-6`: Skintone modifiers. Only 0-5 (going from lightest to darkest)
