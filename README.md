@@ -1,4 +1,4 @@
-![MacMoji logo](./macmoji-logo.png)
+![MacMoji logo](https://raw.githubusercontent.com/gustavwilliam/macmoji/main/macmoji-logo.png)
 
 ### MacMoji - Create custom emoji fonts for macOS.
 ---
@@ -152,7 +152,7 @@ The macOS font for emojis is called `Apple Color Emoji.ttc`. In order to change 
 
 In broad terms, the custom emoji font file is generatad by taking Apple's base emojis, decompiling the font files, inserting your assets in the right sizes and formats, and recompiling. Here's a diagram to illustrate the process, before we dig deeper :nerd_face:
 
-![Conversion process](./conversion-process.png)
+![Conversion process](https://raw.githubusercontent.com/gustavwilliam/macmoji/main/conversion-process.png)
 
 
 ### Formats

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "macmoji"
-version = "0.1.0"
+version = "1.0.0"
 description = "Create custom emoji fonts for macOS."
 authors = ["Gustav Odinger <65498475+gustavwilliam@users.noreply.github.com>"]
 readme = "README.md"
