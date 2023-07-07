@@ -16,7 +16,7 @@ from macmoji.config import (
 )
 from macmoji.font import base_emoji_process_cleanup
 
-app = typer.Typer()
+app = typer.Typer(no_args_is_help=True)
 app.add_typer(macmoji.cli.create.app, name="create")
 
 

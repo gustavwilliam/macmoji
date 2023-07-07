@@ -6,7 +6,7 @@ from PIL import Image
 from rich import print
 
 from macmoji.config import ASSET_SIZES, FileType
-from macmoji.utils import is_valid_emoji, asset_file_name
+from macmoji.utils import is_valid_emoji, asset_file_name, reformat_emoji_name
 
 ALLOWED_INPUT_TYPES = [FileType.SVG, FileType.PNG]
 
@@ -33,20 +33,26 @@ def generate_assets(
     n_successful = 0
 
     for fp in dir_path.iterdir():
+        try:
+            formatted_name = reformat_emoji_name(fp.stem)
+        except ValueError:
+            ignored_paths.append((fp, "is not a valid emoji name"))
+            continue
+
         if fp.is_dir():
             ignored_paths.append((fp, "is a directory"))
             continue
         if fp.suffix not in ALLOWED_INPUT_TYPES:
             ignored_paths.append((fp, "is not of type SVG or PNG"))
             continue
-        if not is_valid_emoji(fp.stem):
+        if not is_valid_emoji(formatted_name):
             ignored_paths.append((fp, "is not a valid emoji name"))
             continue
 
         n_successful += 1
         convert_function = svg2asset if fp.suffix == FileType.SVG else png2asset
         for size in ASSET_SIZES:
-            output_path = output_dir / asset_file_name(fp.stem, size)
+            output_path = output_dir / asset_file_name(formatted_name, size)
             convert_function(fp, output_path, size)
 
     if n_successful == 0:

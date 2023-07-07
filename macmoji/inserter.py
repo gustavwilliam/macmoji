@@ -2,6 +2,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from macmoji.config import ASSET_SIZES
+from macmoji.utils import reformat_emoji_name
 
 
 def _hex_to_png(out: str = "img.png", input_path: str = "data.txt"):
@@ -57,13 +58,14 @@ def assets_info(
             continue
 
         try:
-            name, size = asset_path.stem.split(" ")
+            raw_name, size = asset_path.stem.split(" ")
             size = int(size)
         except ValueError:
             ignored_paths.append(
                 (asset_path, f"has invalid file name '{asset_path.stem}'")
             )
             continue
+        name = reformat_emoji_name(raw_name)
 
         if name not in info:
             info[name] = {}
@@ -75,7 +77,9 @@ def assets_info(
         # If the correct sizes aren't provided, the emoji assets are incomplete/invalid
         # Without *all* sizes, some sizes of the emoji would show up as the original
         # Apple emoji. It's better to let the user re-generate the proper assets.
-        if set(asset.keys()) == set(ASSET_SIZES):
+        if set(asset.keys()) == set(
+            ASSET_SIZES
+        ):  # TODO: filter out invalid emoji names
             filtered_info[key] = asset
         else:
             for path in asset.values():

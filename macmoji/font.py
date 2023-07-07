@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import inspect
 import os
 from pathlib import Path
+import shutil
 import sys
 from typing import Callable, Iterator
 
@@ -46,22 +47,24 @@ def suppress_stdout(function: Callable) -> Iterator:
 
 def generate_base_emoji_ttf():
     """Generates base TTF files from default TTC emoji file."""
-    options = AfdkoOptions("macmoji/base-emoji-font.ttc", False)
-    otc2otf.run(options)
-    os.replace(
-        "macmoji/AppleColorEmoji.ttf", BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf"
-    )
-    os.replace(
-        "macmoji/.AppleColorEmojiUI.ttf",
-        BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf",
-    )
+    # Creating a copy at destination directory will cause `otc2otf` to generate
+    # the TTF files in the correct directory, instead of trying to generate them at
+    # the `macmoji/macmoji` (defaults to generating at same directory as the TTC).
+    # As an installed pip package, MacMoji might not be able to write to its own
+    # directory, so this is an importnt step.
+    shutil.copy("macmoji/AppleColorEmoji.ttc", BASE_EMOJI_FONT_PATH)
+    otc2otf.main(BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttc")
 
 
 def generate_base_emoji_ttx(file_name: str):
     """Generates base TTX files from default TTF emoji files."""
     TMP_NAME = f"{file_name}-tmp.ttx"
 
-    # Writing to temporary file first, so if the process is interrupted, the original file is not overwritten.
+    # Writing to temporary file first, so if the process is interrupted, the
+    # original file is not overwritten. Having an incomplete TTX file at the
+    # destination would cause base-file generation without the `--force` flag
+    # to view the TTX file as valid, therefore skipping generation, despite it
+    # being incomplete/corrupted.
     ttx.ttDump(
         BASE_EMOJI_FONT_PATH / f"{file_name}.ttf",
         BASE_EMOJI_FONT_PATH / TMP_NAME,  # type: ignore
@@ -100,16 +103,15 @@ def base_emoji_process_cleanup() -> int:
     """Removes temporary files generated during base emoji generation and returns memory cleared."""
     memory_cleared = 0
     for path in [
+        BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttc",
         BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttf",
         BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI.ttf",
+        BASE_EMOJI_FONT_PATH / "AppleColorEmoji-tmp.ttx",
+        BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-tmp.ttx",
+        BASE_EMOJI_FONT_PATH / "AppleColorEmoji-usr.ttx",
+        BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-usr.ttx",
         BASE_EMOJI_FONT_PATH / "AppleColorEmoji-usr.ttf",
         BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-usr.ttf",
-        BASE_EMOJI_FONT_PATH / "AppleColorEmoji-tmp.ttx",
-        BASE_EMOJI_FONT_PATH / "AppleColorEmoji-usr.ttx",
-        BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-tmp.ttx",
-        BASE_EMOJI_FONT_PATH / ".AppleColorEmojiUI-usr.ttx",
-        Path("macmoji/AppleColorEmoji.ttf"),
-        Path("macmoji/.AppleColorEmojiUI.ttf"),
     ]:
         if path.exists():
             memory_cleared += path.stat().st_size

@@ -296,9 +296,69 @@ def valid_emoji_names() -> frozenset[str]:
             return names
 
 
-def is_valid_emoji(name):
+def _codify(code: str) -> str:
+    """
+    uXXXXX -> uXXXXX, XXXXX -> uXXXXX, UXXXXX -> uXXXXX
+
+    Works with X lowercase, uppercase or numeric, and with or without leading zeroes.
+    """
+    code = code.upper()
+    if code[0] == "U":
+        code = code[1:]
+    code = code.lstrip("0")
+
+    return f"u{code}"
+
+
+def reformat_emoji_name(name: str) -> str:
+    """
+    Reformats name of an emoji to the correct capitalization and adds "u" if needed.
+
+    ---
+
+    Examples:
+        - `u1F385` -> `u1F385`
+        - `u1f385` -> `u1F385`
+        - `1f385` -> `u1F385`
+        - `U1F385` -> `u1F385`
+
+    If the name contains multiple unicode codes, every one is reformatted:
+        - `u1F469_u1F91D_u1F468` -> `u1F469_u1F91D_u1F468`
+        - `u1f469_u1F91d_u1F468` -> `u1F469_u1F91D_u1F468`
+        - `1f469_u1F91d_1f468` -> `u1F469_u1F91D_u1F468`
+        - `U1f469_u1F91d_u1f468` -> `u1F469_u1F91D_u1F468`
+
+    If the emoji name contains modifiers at the end, these remain unchanged:
+        - `1f385.2` -> `u1F385.2`
+        - `1f385_u1f3fb.2.M` -> `u1F385_u1F3FB.2.M`
+
+    Note: the emojis used in the examples here are using made-up unicode codes
+    that may or may not map to actual emojis.
+    """
+
+    modifiers = ""
+    base_name = name
+    if "." in name:
+        try:
+            base_name, modifiers = name.split(".", 1)
+        except ValueError:
+            raise ValueError(f"Invalid emoji name: '{name}' (modifiers)")
+
+    codes = base_name.split("_")
+    if "" in codes:
+        raise ValueError(f"Invalid emoji name: '{name}' (codes)")
+
+    code = "_".join(map(_codify, codes))
+    return f"{code}{'.' if modifiers else ''}{modifiers}"
+
+
+def is_valid_emoji(name: str) -> bool:
     """
     Checks if an emoji name is valid based on emoji names in TTX files.
+
+    Please use `reformat_emoji_name` on the name before using this function,
+    to ensure the name is in the correct format. Otherwise it will most likely
+    be rejected.
 
     ---
 

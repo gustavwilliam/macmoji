@@ -11,14 +11,11 @@ from macmoji.config import (
     BASE_EMOJI_FONT_PATH,
     DEFAULT_ASSETS_PATH,
     DEFAULT_GENERATED_FONT_PATH,
-    TTX_SIZE,
     ProgressConfig,
 )
 from macmoji.converter import generate_assets
 from macmoji.font import (
     base_emoji_process_cleanup,
-    generate_base_emoji_ttf,
-    generate_base_emoji_ttx,
     generate_ttc_from_ttf,
     generate_ttf_from_ttx,
 )
@@ -80,7 +77,7 @@ def assets(
     if ignored_paths:
         print(
             "\nIgnored paths:",
-            *(f"\n- '{path}' {reason}" for path, reason in ignored_paths),
+            *(f"\n- [bold red]'{path}'[/] {reason}" for path, reason in ignored_paths),
         )
     if not output_dir_empty and not output_dir == DEFAULT_ASSETS_PATH:
         print(
@@ -101,7 +98,7 @@ def base_files(
     """
     if not force and base_files_exist:
         print(
-            "Base emoji files already exist. Use --force to overwrite them.",
+            "Base emoji files already exist. Use `--force` to overwrite them.",
         )
         return
     generate_base_files(force=force)
@@ -114,6 +111,7 @@ def _insert_emoji_runner(progress: Progress, assets_dir, ttx_in, ttx_out) -> Non
             "Paths to invalid files in assets:",
             *(f"\n- [bold red]{path}[/] {reason}" for path, reason in ignored),
         )
+    # TODO: raise exception?
 
 
 @app.command()
@@ -160,6 +158,10 @@ def font(
         insert_1.join()
         insert_2.join()
 
+        # Generating TTF from TTX files one at a time rather than in parallel, since
+        # `generate_ttf_from_ttx` is accessing asset files, and it doesn't seem like
+        # a nice idea to have multiple processes accessing the same file at the same
+        # time.
         ProgressSimpleTask(
             description="Compiling AppleColorEmoji.ttx",
             progress=progress,
@@ -170,7 +172,6 @@ def font(
             progress=progress,
             target=partial(generate_ttf_from_ttx, ttx_usr_2.stem),
         ).run()
-
         ProgressFileTask(
             description="Generating TTC file",
             progress=progress,
