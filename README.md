@@ -39,7 +39,6 @@ This project has 3 main dependencies, all **required for MacMoji to work** :gear
 
 - [`cairo`](https://formulae.brew.sh/formula/cairo)
 - [`libffi`](https://formulae.brew.sh/formula/libffi)
-- [`git-lfs`](https://formulae.brew.sh/formula/git-lfs)
 
 All can be installed via [Homebrew](https://brew.sh):
 ```bash

@@ -47,13 +47,18 @@ def suppress_stdout(function: Callable) -> Iterator:
 
 def generate_base_emoji_ttf():
     """Generates base TTF files from default TTC emoji file."""
-    # Creating a copy at destination directory will cause `otc2otf` to generate
-    # the TTF files in the correct directory, instead of trying to generate them at
-    # the `macmoji/macmoji` (defaults to generating at same directory as the TTC).
-    # As an installed pip package, MacMoji might not be able to write to its own
-    # directory, so this is an importnt step.
-    shutil.copy("macmoji/AppleColorEmoji.ttc", BASE_EMOJI_FONT_PATH)
-    otc2otf.main(BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttc")
+    # Copying the system emoji font to the base emoji font directory
+    default_font = Path("/System/Library/Fonts/Apple Color Emoji.ttc")
+    if not default_font.exists():
+        raise FileNotFoundError(
+            "System emoji font not found. This is either because you are not running macOS, or you have deleted the system emoji font (unlikely)."
+        )
+
+    shutil.copy(
+        default_font,
+        BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttc",
+    )
+    otc2otf.main([str(BASE_EMOJI_FONT_PATH / "AppleColorEmoji.ttc")])
 
 
 def generate_base_emoji_ttx(file_name: str):
