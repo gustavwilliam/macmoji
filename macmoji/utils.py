@@ -344,7 +344,7 @@ def reformat_emoji_name(name: str) -> str:
         except ValueError:
             raise ValueError(f"Invalid emoji name: '{name}' (modifiers)")
 
-    codes = base_name.split("_")
+    codes = base_name.replace("-", "_").split("_")
     if "" in codes:
         raise ValueError(f"Invalid emoji name: '{name}' (codes)")
 
