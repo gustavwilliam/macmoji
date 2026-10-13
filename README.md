@@ -205,7 +205,7 @@ Recompiling the modified TTX files into TTF and then a single TTC file is basica
 # Limitations
 
 If you use the default way of installing your custom font (`macmoji install`), the emojis will update basically everywhere. However, a few notable exceptions are:
-- **WebKit**: affects Safari (but not other browsers like Chrome and Firefix, since they're using a different rendering engine than WebKit)
+- **WebKit**: affects Safari (but not other browsers like Chrome and Firefox, since they're using a different rendering engine than WebKit)
 - **Some Adobe apps**: affects Illustrator, Photoshop and (while selecting text) XD. Other adobe apps have not been tested
 
 ## Workaround
